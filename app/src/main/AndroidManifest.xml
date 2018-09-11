@@ -27,7 +27,7 @@
 
         <meta-data
             android:name="fritz_api_key"
-            android:value="@string/fritz_api_key" />
+            android:value="your app's api key" />
         <service
             android:name="ai.fritz.core.FritzJob"
             android:exported="true"
