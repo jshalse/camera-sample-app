@@ -23,6 +23,7 @@ import ai.fritz.fritzvisionstylemodel.FritzVisionStylePredictorOptions;
 import ai.fritz.fritzvisionstylemodel.FritzVisionStyleTransfer;
 import ai.fritz.vision.inputs.FritzVisionImage;
 import ai.fritz.vision.inputs.FritzVisionOrientation;
+import ai.fritz.vision.predictors.FritzVisionPredictor;
 
 public class MainActivity extends BaseCameraActivity implements ImageReader.OnImageAvailableListener {
 
@@ -34,22 +35,26 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
     private FritzVisionImage styledImage;
 
-    private FritzVisionStylePredictor predictor;
-    private FritzVisionStylePredictorOptions options;
+    // STEP 1:
+    // TODO: Define the predictor variable
+    // private FritzVisionStylePredictor predictor;
+    // END STEP 1
 
     private Size cameraViewSize;
-
-    private OverlayView overlayView;
-    private int activeStyleIndex = 0;
-
-    private FritzVisionOrientation orientation;
-
-    private Bitmap styledBitmap = null;
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize Fritz
         Fritz.configure(this);
+
+        // STEP 1: Get the predictor and set the options.
+        // ----------------------------------------------
+        // TODO: Add the predictor snippet here
+        // predictor = FritzVisionStyleTransfer.getPredictor(this, ArtisticStyle.STARRY_NIGHT);
+        // ----------------------------------------------
+        // END STEP 1
     }
 
     @Override
@@ -65,14 +70,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     @Override
     public void onPreviewSizeChosen(final Size previewSize, final Size cameraViewSize, final int rotation) {
 
-        // Step 1: Get the predictor and set the options
-        options = new FritzVisionStylePredictorOptions.Builder()
-                .imageResolution(FritzStyleResolution.NORMAL)
-                .build();
-        ArtisticStyle[] styles = ArtisticStyle.values();
-        predictor = FritzVisionStyleTransfer.getPredictor(this, styles[activeStyleIndex], options);
-        orientation = FritzVisionOrientation.getImageOrientationFromCamera(this, cameraId);
-
         this.cameraViewSize = cameraViewSize;
 
         // Callback draws a canvas on the OverlayView
@@ -80,31 +77,16 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                 new OverlayView.DrawCallback() {
                     @Override
                     public void drawCallback(final Canvas canvas) {
-                        // Step 4: Draw the prediction result
+                        // STEP 4: Draw the prediction result
+                        // ----------------------------------
                         if (styledImage != null) {
-                            Matrix matrix = new Matrix();
-                            canvas.drawBitmap(styledBitmap, matrix, new Paint());
+                            // TODO: Draw or show the result here
+                            // styledImage.drawOnCanvas(canvas);
                         }
+                        // ----------------------------------
+                        // END STEP 4
                     }
                 });
-
-        // Change the predictor
-        overlayView = findViewById(R.id.debug_overlay);
-        overlayView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getNextPredictor();
-            }
-        });
-    }
-
-    private void getNextPredictor() {
-        ArtisticStyle[] styles = ArtisticStyle.values();
-        activeStyleIndex = ++activeStyleIndex % styles.length;
-
-        Toast.makeText(this,
-                styles[activeStyleIndex].name() + " Style Shown", Toast.LENGTH_LONG).show();
-        predictor = FritzVisionStyleTransfer.getPredictor(this, styles[activeStyleIndex], options);
     }
 
     @Override
@@ -120,9 +102,14 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
             return;
         }
 
-        // Step 2: Create the FritzVisionImage object from media.Image
-        final FritzVisionImage fritzImage = FritzVisionImage.fromMediaImage(image);
-        fritzImage.setOrientation(orientation);
+        // STEP 2: Create the FritzVisionImage object from media.Image
+        // ------------------------------------------------------------------------
+        // TODO: Add code for creating FritzVisionImage from a media.Image object
+        // int rotationFromCamera = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
+        // final FritzVisionImage fritzImage = FritzVisionImage.fromMediaImage(image, rotationFromCamera);
+        // ------------------------------------------------------------------------
+        // END STEP 2
+
         image.close();
 
 
@@ -130,14 +117,17 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                 new Runnable() {
                     @Override
                     public void run() {
+                        // STEP 3: Run predict on the image
+                        // ---------------------------------------------------
+                        // TODO: Add code for running prediction on the image
+                        // final long startTime = SystemClock.uptimeMillis();
+                        // styledImage = predictor.predict(fritzImage);
+                        // styledImage.scale(cameraViewSize.getWidth(), cameraViewSize.getHeight());
+                        // Log.d(TAG, "INFERENCE TIME:" + (SystemClock.uptimeMillis() - startTime));
+                        // ----------------------------------------------------
+                        // END STEP 3
 
-                        // Step 3: Run inference on the image
-                        final long startTime = SystemClock.uptimeMillis();
-                        styledImage = predictor.predict(fritzImage);
-                        styledImage.scale(cameraViewSize.getWidth(), cameraViewSize.getHeight());
-                        styledBitmap = styledImage.getBitmap();
-                        Log.d(TAG, "INFERENCE TIME:" + (SystemClock.uptimeMillis() - startTime));
-
+                        // Fire callback to change the OverlayView
                         requestRender();
                         computing.set(false);
                     }
