@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">FritzCameraApp</string>
+    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <string name="fritz_api_key">60547ef7311d42c3a19e0f7d7880df9c</string>
+
+</resources>
