@@ -21,9 +21,9 @@ Get Started:
     ```
 4.Follow the documentation or a tutorial to add in specific Fritz feature or add your own custom model.
 
-    - Object Detection: https://docs.fritz.ai/features/object-detection/about.html
-    - Image Labeling: https://docs.fritz.ai/features/image-labeling/about.html
-    - Style Transefer: https://docs.fritz.ai/features/style-transfer/about.html
+* Object Detection: https://docs.fritz.ai/features/object-detection/about.html
+* Image Labeling: https://docs.fritz.ai/features/image-labeling/about.html
+* Style Transefer: https://docs.fritz.ai/features/style-transfer/about.html
 
 Tutorials:
 ============
