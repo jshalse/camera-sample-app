@@ -21,8 +21,7 @@ allprojects {
         jcenter()
 
         // ADD FOR FRITZ DEPENDENCIES
-        maven { url "https://raw.github.com/fritzlabs/fritz-repository/master" }
-    }
+        maven { url "https://raw.github.com/fritzlabs/fritz-repository/master" }    }
 }
 
 task clean(type: Delete) {

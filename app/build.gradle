@@ -26,8 +26,12 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0-rc02'
     implementation 'com.android.support.constraint:constraint-layout:1.1.2'
 
-    implementation 'ai.fritz:core:1.2.0'
-    implementation "ai.fritz:vision-style-model:1.2.0"
+
+
+    implementation 'ai.fritz:core:2.1.0'
+    implementation 'ai.fritz:vision-object:2.1.0'
+
+    implementation 'ai.fritz:vision-label:2.1.0'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

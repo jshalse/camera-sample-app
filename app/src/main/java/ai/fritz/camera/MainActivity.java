@@ -1,9 +1,12 @@
 package ai.fritz.camera;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.SystemClock;
@@ -11,19 +14,20 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.Size;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ai.fritz.core.Fritz;
-import ai.fritz.fritzvisionstylemodel.ArtisticStyle;
-import ai.fritz.fritzvisionstylemodel.FritzStyleResolution;
-import ai.fritz.fritzvisionstylemodel.FritzVisionStylePredictor;
-import ai.fritz.fritzvisionstylemodel.FritzVisionStylePredictorOptions;
-import ai.fritz.fritzvisionstylemodel.FritzVisionStyleTransfer;
+import ai.fritz.fritzvisionobjectmodel.FritzVisionObjectPredictor;
+import ai.fritz.fritzvisionobjectmodel.FritzVisionObjectResult;
+
 import ai.fritz.vision.inputs.FritzVisionImage;
 import ai.fritz.vision.inputs.FritzVisionOrientation;
 import ai.fritz.vision.predictors.FritzVisionPredictor;
+import ai.fritz.visionlabel.FritzVisionLabelPredictor;
+import ai.fritz.visionlabel.FritzVisionLabelResult;
 
 public class MainActivity extends BaseCameraActivity implements ImageReader.OnImageAvailableListener {
 
@@ -34,10 +38,15 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private AtomicBoolean computing = new AtomicBoolean(false);
 
     private FritzVisionImage styledImage;
+    FritzVisionImage visionImage;
+    TextView textView;
+
 
     // STEP 1:
     // TODO: Define the predictor variable
     // private FritzVisionStylePredictor predictor;
+     FritzVisionLabelPredictor visionPredictor;
+     FritzVisionLabelResult labelResult;
     // END STEP 1
 
     private Size cameraViewSize;
@@ -46,13 +55,16 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        textView = (TextView)findViewById(R.id.textView);
+
         // Initialize Fritz
-        Fritz.configure(this);
+        Fritz.configure(this,"c8df3628771648f2960de5e3fca29053");
 
         // STEP 1: Get the predictor and set the options.
         // ----------------------------------------------
         // TODO: Add the predictor snippet here
         // predictor = FritzVisionStyleTransfer.getPredictor(this, ArtisticStyle.STARRY_NIGHT);
+         visionPredictor = new FritzVisionLabelPredictor();
         // ----------------------------------------------
         // END STEP 1
     }
@@ -82,6 +94,8 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                         if (styledImage != null) {
                             // TODO: Draw or show the result here
                             // styledImage.drawOnCanvas(canvas);
+                            // Draw the original image that was passed into the predictor
+
                         }
                         // ----------------------------------
                         // END STEP 4
@@ -105,8 +119,24 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
         // STEP 2: Create the FritzVisionImage object from media.Image
         // ------------------------------------------------------------------------
         // TODO: Add code for creating FritzVisionImage from a media.Image object
+        // Get the system service for the camera manager
+        final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+
+        // Gets the first camera id
+        String cameraId = null;
+        try {
+            cameraId = manager.getCameraIdList()[0];
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+// Determine the rotation on the FritzVisionImage from the camera orientaion and the device rotation.
+// "this" refers to the calling Context (Application, Activity, etc)
+        int imageRotationFromCamera = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
+
         // int rotationFromCamera = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
         // final FritzVisionImage fritzImage = FritzVisionImage.fromMediaImage(image, rotationFromCamera);
+       visionImage = FritzVisionImage.fromMediaImage(image, imageRotationFromCamera);
         // ------------------------------------------------------------------------
         // END STEP 2
 
@@ -126,7 +156,18 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                         // Log.d(TAG, "INFERENCE TIME:" + (SystemClock.uptimeMillis() - startTime));
                         // ----------------------------------------------------
                         // END STEP 3
+                         labelResult = visionPredictor.predict(visionImage);
 
+                        runOnUiThread(new Runnable() {
+
+                            @Override
+                            public void run() {
+
+                                // Stuff that updates the UI
+                                textView.setText(labelResult.getResultString());
+                                labelResult.logResult();
+                            }
+                        });
                         // Fire callback to change the OverlayView
                         requestRender();
                         computing.set(false);
