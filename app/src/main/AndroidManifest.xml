@@ -17,6 +17,8 @@
         android:supportsRtl="true"
         android:largeHeap="true"
         android:theme="@style/AppTheme">
+
+
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,6 +30,11 @@
         <meta-data
             android:name="fritz_api_key"
             android:value="c8df3628771648f2960de5e3fca29053" />
+
+        <service
+            android:name="ai.fritz.core.FritzCustomModelService"
+            android:exported="true"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
 
     </application>
 
