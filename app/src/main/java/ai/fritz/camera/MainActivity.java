@@ -16,6 +16,7 @@ import ai.fritz.core.Fritz;
 import ai.fritz.core.FritzOnDeviceModel;
 
 
+import ai.fritz.customtflite.FritzTFLiteInterpreter;
 import ai.fritz.fritzvisionobjectmodel.ObjectDetectionOnDeviceModel;
 import ai.fritz.vision.FritzVision;
 import ai.fritz.vision.FritzVisionImage;
@@ -35,6 +36,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     FritzVisionObjectPredictor objectPredictor;
     FritzVisionObjectResult objectResult;
     FritzVisionImage fritzVisionImage;
+    FritzTFLiteInterpreter tfliteInterpreter;
     int imageRotation;
 
     private Size cameraViewSize;
@@ -48,8 +50,11 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
         Fritz.configure(this,"c8df3628771648f2960de5e3fca29053");
 
         // STEP 1: Get the predictor and set the options.
-        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
-        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
+//        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
+//        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
+        FritzOnDeviceModel onDeviceModel = new Optimized_graphCustomModel();
+        tfliteInterpreter = new FritzTFLiteInterpreter(onDeviceModel);
+
         // ----------------------------------------------
         // END STEP 1
     }
@@ -125,6 +130,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     public void run() {
                         // STEP 3: Run predict on the image
                         objectResult = objectPredictor.predict(fritzVisionImage);
+
 
                         // Fire callback to change the OverlayView
                         requestRender();
