@@ -1,7 +1,6 @@
 package ai.fritz.camera;
 
 import ai.fritz.core.FritzOnDeviceModel;
-import ai.fritz.customtflite.FritzTFLiteInterpreter;
 
 public class Optimized_graphCustomModel extends FritzOnDeviceModel {
 
@@ -12,12 +11,6 @@ public class Optimized_graphCustomModel extends FritzOnDeviceModel {
     public Optimized_graphCustomModel() {
         super(MODEL_PATH, MODEL_ID, MODEL_VERSION);
     }
-
-    FritzOnDeviceModel onDeviceModel = new Optimized_graphCustomModel();
-    FritzTFLiteInterpreter tfliteInterpreter = new FritzTFLiteInterpreter(onDeviceModel);
-
-
-
 }
 
 

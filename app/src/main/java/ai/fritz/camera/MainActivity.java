@@ -1,13 +1,13 @@
 package ai.fritz.camera;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraManager;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Size;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,6 +17,7 @@ import ai.fritz.core.FritzOnDeviceModel;
 
 
 import ai.fritz.customtflite.FritzTFLiteInterpreter;
+
 import ai.fritz.fritzvisionobjectmodel.ObjectDetectionOnDeviceModel;
 import ai.fritz.vision.FritzVision;
 import ai.fritz.vision.FritzVisionImage;
@@ -36,28 +37,27 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     FritzVisionObjectPredictor objectPredictor;
     FritzVisionObjectResult objectResult;
     FritzVisionImage fritzVisionImage;
-    FritzTFLiteInterpreter tfliteInterpreter;
+    CustomTFLiteClassifier classifier;
     int imageRotation;
 
     private Size cameraViewSize;
+
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         // Initialize Fritz
         Fritz.configure(this,"c8df3628771648f2960de5e3fca29053");
 
         // STEP 1: Get the predictor and set the options.
-//        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
-//        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
-        FritzOnDeviceModel onDeviceModel = new Optimized_graphCustomModel();
-        tfliteInterpreter = new FritzTFLiteInterpreter(onDeviceModel);
-
+        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
+        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
+        classifier = new CustomTFLiteClassifier(this);
         // ----------------------------------------------
         // END STEP 1
     }
+
 
     @Override
     protected int getLayoutId() {
@@ -76,12 +76,12 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
         imageRotation = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
         final Size targetSize = new Size(1280, 630);
+
+
 //        FritzVisionObjectPredictorOptions options = new FritzVisionObjectPredictorOptions.Builder()
 //                .confidenceThreshold(.6f).build();
         //objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel, options);
 
-        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
-        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
 
         // Callback draws a canvas on the OverlayView
         addCallback(
@@ -115,9 +115,11 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
             return;
         }
 
+
         // STEP 2: Create the FritzVisionImage object from media.Image
         int imageRotationFromCamera = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
         fritzVisionImage  = FritzVisionImage.fromMediaImage(image, imageRotationFromCamera);
+
 
         // ------------------------------------------------------------------------
         // END STEP 2
@@ -130,8 +132,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     public void run() {
                         // STEP 3: Run predict on the image
                         objectResult = objectPredictor.predict(fritzVisionImage);
-
-
+                        classifier.classify(fritzVisionImage.getBitmap());
                         // Fire callback to change the OverlayView
                         requestRender();
                         computing.set(false);
