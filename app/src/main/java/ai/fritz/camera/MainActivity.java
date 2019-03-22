@@ -1,26 +1,23 @@
 package ai.fritz.camera;
 
-import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.hardware.camera2.CameraAccessException;
-import android.hardware.camera2.CameraManager;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Size;
+import android.widget.TextView;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ai.fritz.core.Fritz;
 import ai.fritz.core.FritzOnDeviceModel;
 
-
-import ai.fritz.customtflite.FritzTFLiteInterpreter;
-
 import ai.fritz.fritzvisionobjectmodel.ObjectDetectionOnDeviceModel;
 import ai.fritz.vision.FritzVision;
 import ai.fritz.vision.FritzVisionImage;
+import ai.fritz.vision.FritzVisionObject;
 import ai.fritz.vision.FritzVisionOrientation;
 import ai.fritz.vision.objectdetection.FritzVisionObjectPredictor;
 import ai.fritz.vision.objectdetection.FritzVisionObjectResult;
@@ -34,13 +31,16 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
     private AtomicBoolean computing = new AtomicBoolean(false);
 
-    FritzVisionObjectPredictor objectPredictor;
-    FritzVisionObjectResult objectResult;
-    FritzVisionImage fritzVisionImage;
-    CustomTFLiteClassifier classifier;
-    int imageRotation;
+    private FritzVisionObjectPredictor objectPredictor;
+    private FritzVisionObjectResult objectResult;
+    private FritzVisionImage fritzVisionImage;
+    private CustomTFLiteClassifier classifier;
+    private int imageRotation;
 
-    private Size cameraViewSize;
+    private int object = -1;
+
+    private TextView label;
+
 
 
     @Override
@@ -49,13 +49,15 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
         // Initialize Fritz
         Fritz.configure(this,"c8df3628771648f2960de5e3fca29053");
+        label = (TextView)findViewById(R.id.textView);
 
         // STEP 1: Get the predictor and set the options.
-        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
-        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
+
         classifier = new CustomTFLiteClassifier(this);
         // ----------------------------------------------
         // END STEP 1
+
+
     }
 
 
@@ -72,16 +74,15 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     @Override
     public void onPreviewSizeChosen(final Size previewSize, final Size cameraViewSize, final int rotation) {
 
-        this.cameraViewSize = cameraViewSize;
-
         imageRotation = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
-        final Size targetSize = new Size(1280, 630);
 
 
 //        FritzVisionObjectPredictorOptions options = new FritzVisionObjectPredictorOptions.Builder()
 //                .confidenceThreshold(.6f).build();
         //objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel, options);
 
+        FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
+        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
 
         // Callback draws a canvas on the OverlayView
         addCallback(
@@ -91,8 +92,17 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                         // STEP 4: Draw the prediction result
                         // ----------------------------------
                         if(objectResult != null){
-                            objectResult.drawBoundingBoxes(canvas, targetSize);
+                            objectResult.drawBoundingBoxes(canvas, cameraViewSize);
                         }
+
+                        switch(object){
+                            case 0:label.setText("Blender bottle"); break;
+                            case 1:label.setText("Glasses");break;
+                            case 2:label.setText("Lock");break;
+                            case 3:label.setText("Monitor");break;
+                            case 4:label.setText("Thermometer");break;
+                        }
+
                     }
                 });
     }
@@ -100,12 +110,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     @Override
     public void onImageAvailable(final ImageReader reader) {
         Image image = reader.acquireLatestImage();
-        final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String cameraId = manager.getCameraIdList()[0];
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
+
         if (image == null) {
             return;
         }
@@ -117,9 +122,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
 
         // STEP 2: Create the FritzVisionImage object from media.Image
-        int imageRotationFromCamera = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
-        fritzVisionImage  = FritzVisionImage.fromMediaImage(image, imageRotationFromCamera);
-
+        fritzVisionImage  = FritzVisionImage.fromMediaImage(image, imageRotation);
 
         // ------------------------------------------------------------------------
         // END STEP 2
@@ -132,7 +135,18 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     public void run() {
                         // STEP 3: Run predict on the image
                         objectResult = objectPredictor.predict(fritzVisionImage);
-                        classifier.classify(fritzVisionImage.getBitmap());
+                        List<FritzVisionObject> visionObjects = objectResult.getVisionObjects();
+
+                        float bottom = visionObjects.get(0).getBoundingBox().bottom;
+                        float top = visionObjects.get(0).getBoundingBox().top;
+                        float left = visionObjects.get(0).getBoundingBox().left;
+                        float right = visionObjects.get(0).getBoundingBox().right;
+
+                        Log.d("tag",bottom + " " + top + " " + left + " " + right + "");
+
+                        object = classifier.classify(fritzVisionImage.getBitmap());
+
+
                         // Fire callback to change the OverlayView
                         requestRender();
                         computing.set(false);

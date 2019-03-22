@@ -89,19 +89,27 @@ public class CustomTFLiteClassifier {
      * @return the number that was identified (returns -1 if one wasn't found)
      */
     private int getResult() {
+        float highest = mnistOutput[0][0];
+        int obj = -1;
+
         for (int i = 0; i < mnistOutput[0].length; i++) {
+
             float value = mnistOutput[0][i];
+
+            if(value > highest){
+                highest = value;
+                obj = i;
+            }
             //blender bottle
             //glasses
             //lock
             //monitor
             //thermometer
             Log.d(TAG, "Output for " + Integer.toString(i) + ": " + Float.toString(value));
-            if (value == 1f) {
-                return i;
-            }
+
         }
-        return -1;
+        Log.d(TAG,"obj is " + obj);
+        return obj;
     }
 
     /**
