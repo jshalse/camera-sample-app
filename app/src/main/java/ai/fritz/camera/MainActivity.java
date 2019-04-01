@@ -1,5 +1,8 @@
 package ai.fritz.camera;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.media.Image;
 import android.media.ImageReader;
@@ -8,7 +11,6 @@ import android.util.Log;
 import android.util.Size;
 import android.widget.TextView;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ai.fritz.core.Fritz;
@@ -36,11 +38,15 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private FritzVisionImage fritzVisionImage;
     private CustomTFLiteClassifier classifier;
     private int imageRotation;
+    private Intent customModelIntent;
 
     private int object = -1;
-
+    private AlertDialog alert;
     private TextView label;
+    private String prevObj = "";
+    private String prevprevObj = "";
 
+    private enum Object{BlenderBottle,Glasses,Lock,Monitor,Thermomter};
 
 
     @Override
@@ -57,9 +63,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
         // ----------------------------------------------
         // END STEP 1
 
-
     }
-
 
     @Override
     protected int getLayoutId() {
@@ -76,7 +80,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
         imageRotation = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
 
-
 //        FritzVisionObjectPredictorOptions options = new FritzVisionObjectPredictorOptions.Builder()
 //                .confidenceThreshold(.6f).build();
         //objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel, options);
@@ -90,22 +93,63 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     @Override
                     public void drawCallback(final Canvas canvas) {
                         // STEP 4: Draw the prediction result
-                        // ----------------------------------
-                        if(objectResult != null){
-                            objectResult.drawBoundingBoxes(canvas, cameraViewSize);
-                        }
 
-                        switch(object){
-                            case 0:label.setText("Blender bottle"); break;
-                            case 1:label.setText("Glasses");break;
-                            case 2:label.setText("Lock");break;
-                            case 3:label.setText("Monitor");break;
-                            case 4:label.setText("Thermometer");break;
-                        }
+                            switch (object) {
+                                case 0:
+                                    label.setText("Blender bottle");
+                                    break;
+                                case 1:
+                                    label.setText("Glasses");
+                                    break;
+                                case 2:
+                                    label.setText("Lock");
+                                    break;
+                                case 3:
+                                    label.setText("Monitor");
+                                    break;
+                                case 4:
+                                    label.setText("Thermometer");
+                                    break;
+                            }
 
-                    }
+
+                        if (!(label.getText().equals("TextView")) && !(prevObj.equals(label.getText())) && !(prevprevObj.equals(label.getText()))) {
+                            prevObj = label.getText().toString();
+                            if(!prevprevObj.equals(prevObj)) {
+                                prevprevObj = prevObj;
+                            }
+
+                            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                            builder.setMessage("Is a " + label.getText().toString() + " the correct object?")
+                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // FIRE ZE MISSILES!
+                                        }
+                                    })
+                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // User cancelled the dialog
+                                        }
+                                    });
+                                alert = builder.create();
+
+                                alert.show();
+
+                        }
+                            //alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+
+//                        finish();
+//                        customModelIntent = new Intent(MainActivity.this, ChosenCustomModel.class);
+//                        MainActivity.this.startActivity(customModelIntent);
+
+                        }
                 });
+
+
+
+
     }
+
 
     @Override
     public void onImageAvailable(final ImageReader reader) {
@@ -119,7 +163,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
             image.close();
             return;
         }
-
 
         // STEP 2: Create the FritzVisionImage object from media.Image
         fritzVisionImage  = FritzVisionImage.fromMediaImage(image, imageRotation);
@@ -135,14 +178,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     public void run() {
                         // STEP 3: Run predict on the image
                         objectResult = objectPredictor.predict(fritzVisionImage);
-                        List<FritzVisionObject> visionObjects = objectResult.getVisionObjects();
-
-                        float bottom = visionObjects.get(0).getBoundingBox().bottom;
-                        float top = visionObjects.get(0).getBoundingBox().top;
-                        float left = visionObjects.get(0).getBoundingBox().left;
-                        float right = visionObjects.get(0).getBoundingBox().right;
-
-                        Log.d("tag",bottom + " " + top + " " + left + " " + right + "");
 
                         object = classifier.classify(fritzVisionImage.getBitmap());
 
