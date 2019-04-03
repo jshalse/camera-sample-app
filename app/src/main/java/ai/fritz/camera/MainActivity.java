@@ -7,10 +7,13 @@ import android.graphics.Canvas;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
-import android.util.Log;
+import android.speech.RecognizerIntent;
 import android.util.Size;
 import android.widget.TextView;
+import android.widget.Toast;
 
+
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ai.fritz.core.Fritz;
@@ -19,7 +22,6 @@ import ai.fritz.core.FritzOnDeviceModel;
 import ai.fritz.fritzvisionobjectmodel.ObjectDetectionOnDeviceModel;
 import ai.fritz.vision.FritzVision;
 import ai.fritz.vision.FritzVisionImage;
-import ai.fritz.vision.FritzVisionObject;
 import ai.fritz.vision.FritzVisionOrientation;
 import ai.fritz.vision.objectdetection.FritzVisionObjectPredictor;
 import ai.fritz.vision.objectdetection.FritzVisionObjectResult;
@@ -39,6 +41,9 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private CustomTFLiteClassifier classifier;
     private int imageRotation;
     private Intent customModelIntent;
+
+    private final int REQ_CODE = 100;
+
 
     private int object = -1;
     private AlertDialog alert;
@@ -119,6 +124,8 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                                 prevprevObj = prevObj;
                             }
 
+                            listenToSpeech();
+
                             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                             builder.setMessage("Is a " + label.getText().toString() + " the correct object?")
                                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -145,11 +152,43 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                         }
                 });
 
-
-
-
     }
 
+    private void listenToSpeech(){
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Pull up instruction for the object? YES/NO");
+
+        if(intent.resolveActivity(getPackageManager()) != null){
+            startActivityForResult(intent, REQ_CODE);
+        }
+        else {
+            Toast.makeText(this, "Speech recognition not supported!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode){
+            case REQ_CODE: {
+                if (resultCode == RESULT_OK && null != data){
+                    String answer = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).get(0);
+
+                    if (answer.equalsIgnoreCase("Yes")){
+                        //Add code to pull up the pdf
+
+                    }else {
+
+                        //Go back and restart detecting objects
+                    }
+                }
+                break;
+            }
+        }
+    }
 
     @Override
     public void onImageAvailable(final ImageReader reader) {
