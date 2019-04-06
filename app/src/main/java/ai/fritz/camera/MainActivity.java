@@ -178,7 +178,8 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     String answer = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).get(0);
 
                     if (answer.equalsIgnoreCase("Yes")){
-                        //Add code to pull up the pdf
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("pdf url"));
+                        startActivity(browserIntent);
 
                     }else {
 
