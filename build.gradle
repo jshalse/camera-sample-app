@@ -7,7 +7,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
+        classpath 'com.android.tools.build:gradle:3.2.1'
         
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -19,9 +19,11 @@ allprojects {
     repositories {
         google()
         jcenter()
-
+        // ADD FOR MICROSOFT SPEECH API DEPENDENCIES
+        maven { url 'https://csspeechstorage.blob.core.windows.net/maven/' }
         // ADD FOR FRITZ DEPENDENCIES
-        maven { url "https://raw.github.com/fritzlabs/fritz-repository/master" } }
+        maven { url 'https://raw.github.com/fritzlabs/fritz-repository/master' }
+    }
 
 }
 

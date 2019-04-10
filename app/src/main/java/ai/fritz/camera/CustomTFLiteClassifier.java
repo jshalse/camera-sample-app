@@ -123,7 +123,7 @@ public class CustomTFLiteClassifier {
         }
         imgData.rewind();
 
-        Bitmap resize = Bitmap.createScaledBitmap(bitmap, 224, 224, false);
+        Bitmap resize = Bitmap.createScaledBitmap(bitmap, DIM_IMG_SIZE_X, DIM_IMG_SIZE_Y, false);
 
         int width = resize.getWidth();
         int height = resize.getHeight();

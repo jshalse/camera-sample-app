@@ -7,13 +7,18 @@ import android.graphics.Canvas;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
-import android.speech.RecognizerIntent;
+import android.support.v4.app.ActivityCompat;
+import android.util.Log;
 import android.util.Size;
 import android.widget.TextView;
-import android.widget.Toast;
 
 
-import java.util.Locale;
+import com.microsoft.cognitiveservices.speech.ResultReason;
+import com.microsoft.cognitiveservices.speech.SpeechConfig;
+import com.microsoft.cognitiveservices.speech.SpeechRecognitionResult;
+import com.microsoft.cognitiveservices.speech.SpeechRecognizer;
+
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import ai.fritz.core.Fritz;
@@ -25,6 +30,9 @@ import ai.fritz.vision.FritzVisionImage;
 import ai.fritz.vision.FritzVisionOrientation;
 import ai.fritz.vision.objectdetection.FritzVisionObjectPredictor;
 import ai.fritz.vision.objectdetection.FritzVisionObjectResult;
+
+import static android.Manifest.permission.INTERNET;
+import static android.Manifest.permission.RECORD_AUDIO;
 
 
 public class MainActivity extends BaseCameraActivity implements ImageReader.OnImageAvailableListener {
@@ -42,7 +50,9 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private int imageRotation;
     private Intent customModelIntent;
 
-    private final int REQ_CODE = 100;
+
+    private static String speechSubscriptionKey = "75e2f2cf3bda44c0b7a43ea56ed89cb3";
+    private static String serviceRegion = "westus";
 
 
     private int object = -1;
@@ -67,6 +77,8 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
         classifier = new CustomTFLiteClassifier(this);
         // ----------------------------------------------
         // END STEP 1
+
+        //ActivityCompat.requestPermissions(MainActivity.this, new String[]{RECORD_AUDIO, INTERNET}, requestCode);
 
     }
 
@@ -124,69 +136,92 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                                 prevprevObj = prevObj;
                             }
 
-                            listenToSpeech();
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                            builder.setMessage("Is a " + label.getText().toString() + " the correct object?")
-                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // FIRE ZE MISSILES!
-                                        }
-                                    })
-                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
-                                        public void onClick(DialogInterface dialog, int id) {
-                                            // User cancelled the dialog
-                                        }
-                                    });
-                                alert = builder.create();
+                            builder.setMessage("Is a " + label.getText().toString() + " the correct object? Please say outloud yes or no");
+//                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+//                                        public void onClick(DialogInterface dialog, int id) {
+//                                            // FIRE ZE MISSILES!
+//                                        }
+//                                    })
+//                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+//                                        public void onClick(DialogInterface dialog, int id) {
+//                                            // User cancelled the dialog
+//                                        }
+//                                    });
 
-                                alert.show();
+                            alert = builder.create();
+                            alert.show();
+
+                            listenToSpeech();
+
+                            //alert.dismiss();
 
                         }
-                            //alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
-//                        finish();
-//                        customModelIntent = new Intent(MainActivity.this, ChosenCustomModel.class);
-//                        MainActivity.this.startActivity(customModelIntent);
+                            // alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+
+                            // finish();
+                            // customModelIntent = new Intent(MainActivity.this, ChosenCustomModel.class);
+                            // MainActivity.this.startActivity(customModelIntent);
 
                         }
                 });
 
     }
 
-    private void listenToSpeech(){
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Pull up instruction for the object? YES/NO");
+    private void listenToSpeech() {
+        TextView txt = (TextView) this.findViewById(R.id.showText);
 
-        if(intent.resolveActivity(getPackageManager()) != null){
-            startActivityForResult(intent, REQ_CODE);
-        }
-        else {
-            Toast.makeText(this, "Speech recognition not supported!", Toast.LENGTH_LONG).show();
-        }
-    }
+        Log.d("tag","listen to speech");
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode, resultCode, data);
+        try {
+            SpeechConfig config = SpeechConfig.fromSubscription(speechSubscriptionKey, serviceRegion);
+            assert(config != null);
 
-        switch (requestCode){
-            case REQ_CODE: {
-                if (resultCode == RESULT_OK && null != data){
-                    String answer = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).get(0);
+            SpeechRecognizer reco = new SpeechRecognizer(config);
+            assert(reco != null);
 
-                    if (answer.equalsIgnoreCase("Yes")){
-                        //Add code to pull up the pdf
+            Future<SpeechRecognitionResult> task = reco.recognizeOnceAsync();
+            assert(task != null);
 
+            // Note: this will block the UI thread
+            SpeechRecognitionResult result = task.get();
+            assert(result != null);
+
+            if (result.getReason() == ResultReason.RecognizedSpeech) {
+                String output_result = result.toString();
+                String answer = "";
+                for (int i = output_result.length()-4; i > 0; i--){
+                    if(output_result.charAt(i) != '<'){
+                        answer = output_result.charAt(i) + answer;
                     }else {
-
-                        //Go back and restart detecting objects
+                        break;
                     }
                 }
-                break;
+                Log.d("tag", answer);
+                answer.toLowerCase();
+
+
+                if (answer.contains("yes")){
+                    // Add code to pull up corresponding instruction
+                    alert.dismiss();
+                    txt.setText("Pop up pdf!");
+
+                }else if (answer.contains("no")) {
+                    alert.dismiss();
+                    // Go back and restart detecting objects
+                }
             }
+            else {
+                txt.setText("Try again.");
+            }
+            Log.d("tag",txt.getText()+"");
+
+            reco.close();
+        } catch (Exception ex) {
+            Log.e("SpeechSDKDemo", "unexpected " + ex.getMessage());
+            assert(false);
         }
     }
 
@@ -227,4 +262,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     }
                 });
     }
+
+
 }
