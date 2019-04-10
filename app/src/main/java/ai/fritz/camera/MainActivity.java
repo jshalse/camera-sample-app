@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -207,6 +208,9 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     // Add code to pull up corresponding instruction
                     alert.dismiss();
                     txt.setText("Pop up pdf!");
+
+                    //Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://team34backend.azurewebsites.net/" + label.getText() + ".pdf"));
+                    //startActivity(browserIntent);
 
                 }else if (answer.contains("no")) {
                     alert.dismiss();
