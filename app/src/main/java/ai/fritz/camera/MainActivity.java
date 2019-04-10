@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.media.Image;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.util.Size;
@@ -178,7 +179,9 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     String answer = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS).get(0);
 
                     if (answer.equalsIgnoreCase("Yes")){
-                        //Add code to pull up the pdf
+
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://team34backend.azurewebsites.net/" + label.getText() + ".pdf"));
+                        startActivity(browserIntent);
 
                     }else {
 
