@@ -31,7 +31,7 @@ public class CustomTFLiteClassifier {
     // Name of the file in the assets folder
 
     // Specify the output size
-    private static final int NUMBER_LENGTH = 5;
+    private static final int NUMBER_LENGTH = 6;
     private static final int IMAGE_MEAN = 128;
     private static final float IMAGE_STD = 128.0f;
     // Specify the input size

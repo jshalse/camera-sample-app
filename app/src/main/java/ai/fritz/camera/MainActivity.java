@@ -8,6 +8,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Size;
@@ -40,7 +41,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(1280, 960);
+    private static final Size DESIRED_PREVIEW_SIZE = new Size(960, 960);
 
     private AtomicBoolean computing = new AtomicBoolean(false);
 
@@ -50,7 +51,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private CustomTFLiteClassifier classifier;
     private int imageRotation;
     private Intent customModelIntent;
-
 
     private static String speechSubscriptionKey = "75e2f2cf3bda44c0b7a43ea56ed89cb3";
     private static String serviceRegion = "westus";
@@ -62,7 +62,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private String prevObj = "";
     private String prevprevObj = "";
 
-    private enum Object{BlenderBottle,Glasses,Lock,Monitor,Thermomter};
 
 
     @Override
@@ -112,22 +111,27 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     public void drawCallback(final Canvas canvas) {
                         // STEP 4: Draw the prediction result
 
+
                             switch (object) {
                                 case 0:
-                                    label.setText("Blender bottle");
+                                    label.setText("MacBook");
                                     break;
                                 case 1:
-                                    label.setText("Glasses");
+                                    label.setText("Blender Bottle");
                                     break;
                                 case 2:
-                                    label.setText("Lock");
+                                    label.setText("Gloves");
                                     break;
                                 case 3:
-                                    label.setText("Monitor");
+                                    label.setText("Lock");
                                     break;
                                 case 4:
-                                    label.setText("Thermometer");
+                                    label.setText("Remote Controller");
                                     break;
+                                case 5:
+                                    label.setText("Vigileo Monitor");
+                                    break;
+
                             }
 
 
@@ -139,22 +143,24 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                            builder.setMessage("Is a " + label.getText().toString() + " the correct object? Please say outloud yes or no");
-//                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-//                                        public void onClick(DialogInterface dialog, int id) {
-//                                            // FIRE ZE MISSILES!
-//                                        }
-//                                    })
-//                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
-//                                        public void onClick(DialogInterface dialog, int id) {
-//                                            // User cancelled the dialog
-//                                        }
-//                                    });
+                            builder.setMessage("Is a " + label.getText().toString() + " the correct object? Please say outloud yes or no")
+                                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // FIRE ZE MISSILES!
+                                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://team34backend.azurewebsites.net/" + label.getText() + ".pdf"));
+                                            startActivity(browserIntent);
+                                        }
+                                    })
+                                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                        public void onClick(DialogInterface dialog, int id) {
+                                            // User cancelled the dialog
+                                        }
+                                    });
 
                             alert = builder.create();
                             alert.show();
 
-                            listenToSpeech();
+                            //listenToSpeech();
 
                             //alert.dismiss();
 
