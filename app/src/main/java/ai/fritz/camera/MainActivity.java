@@ -20,6 +20,7 @@ import com.microsoft.cognitiveservices.speech.SpeechConfig;
 import com.microsoft.cognitiveservices.speech.SpeechRecognitionResult;
 import com.microsoft.cognitiveservices.speech.SpeechRecognizer;
 
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,6 +32,7 @@ import ai.fritz.vision.FritzVision;
 import ai.fritz.vision.FritzVisionImage;
 import ai.fritz.vision.FritzVisionOrientation;
 import ai.fritz.vision.objectdetection.FritzVisionObjectPredictor;
+import ai.fritz.vision.objectdetection.FritzVisionObjectPredictorOptions;
 import ai.fritz.vision.objectdetection.FritzVisionObjectResult;
 
 import static android.Manifest.permission.INTERNET;
@@ -41,7 +43,7 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(960, 960);
+    private static final Size DESIRED_PREVIEW_SIZE = new Size(1280, 960);
 
     private AtomicBoolean computing = new AtomicBoolean(false);
 
@@ -59,10 +61,9 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
     private int object = -1;
     private AlertDialog alert;
     private TextView label;
-    private String prevObj = "";
-    private String prevprevObj = "";
-
-
+    private Boolean dup = false;
+    private Boolean empty = true;
+    private ArrayList<String> listOfObjects = new ArrayList<String>();
 
     @Override
     public void onCreate(final Bundle savedInstanceState) {
@@ -97,12 +98,11 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
         imageRotation = FritzVisionOrientation.getImageRotationFromCamera(this, cameraId);
 
-//        FritzVisionObjectPredictorOptions options = new FritzVisionObjectPredictorOptions.Builder()
-//                .confidenceThreshold(.6f).build();
-        //objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel, options);
+        FritzVisionObjectPredictorOptions options = new FritzVisionObjectPredictorOptions.Builder()
+                .confidenceThreshold(.65f).build();
 
         FritzOnDeviceModel onDeviceModel = new ObjectDetectionOnDeviceModel();
-        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel);
+        objectPredictor = FritzVision.ObjectDetection.getPredictor(onDeviceModel,options);
 
         // Callback draws a canvas on the OverlayView
         addCallback(
@@ -110,8 +110,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                     @Override
                     public void drawCallback(final Canvas canvas) {
                         // STEP 4: Draw the prediction result
-
-
                             switch (object) {
                                 case 0:
                                     label.setText("MacBook");
@@ -131,41 +129,44 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
                                 case 5:
                                     label.setText("Vigileo Monitor");
                                     break;
-
                             }
 
-
-                        if (!(label.getText().equals("TextView")) && !(prevObj.equals(label.getText())) && !(prevprevObj.equals(label.getText()))) {
-                            prevObj = label.getText().toString();
-                            if(!prevprevObj.equals(prevObj)) {
-                                prevprevObj = prevObj;
+                            for(int x = 0; x < listOfObjects.size();x++){
+                                if(listOfObjects.get(x).equals(label.getText())){
+                                    dup = true;
+                                }
                             }
 
+                            if (!(label.getText().equals("TextView")) && dup == false && empty == true) {
+                                listOfObjects.add(label.getText()+"");
+                                empty = false;
 
                             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                            builder.setMessage("Is a " + label.getText().toString() + " the correct object? Please say outloud yes or no")
+                            builder.setMessage("Is " + label.getText().toString() + " the correct object? Please say outloud yes or no")
                                     .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // FIRE ZE MISSILES!
-                                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://team34backend.azurewebsites.net/" + label.getText() + ".pdf"));
-                                            startActivity(browserIntent);
+//                                            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://team34backend.azurewebsites.net/" + label.getText() + ".pdf"));
+//                                            startActivity(browserIntent);
                                         }
                                     })
                                     .setNegativeButton("No", new DialogInterface.OnClickListener() {
                                         public void onClick(DialogInterface dialog, int id) {
                                             // User cancelled the dialog
+                                            empty = true;
                                         }
                                     });
 
                             alert = builder.create();
                             alert.show();
 
-                            //listenToSpeech();
+                            listenToSpeech();
 
                             //alert.dismiss();
 
                         }
 
+                        dup = false;
                             // alert.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
                             // finish();
@@ -174,7 +175,6 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
 
                         }
                 });
-
     }
 
     private void listenToSpeech() {
@@ -195,9 +195,11 @@ public class MainActivity extends BaseCameraActivity implements ImageReader.OnIm
             // Note: this will block the UI thread
             SpeechRecognitionResult result = task.get();
             assert(result != null);
+            Log.d("tag",result.toString() + " this is result");
 
             if (result.getReason() == ResultReason.RecognizedSpeech) {
                 String output_result = result.toString();
+
                 String answer = "";
                 for (int i = output_result.length()-4; i > 0; i--){
                     if(output_result.charAt(i) != '<'){

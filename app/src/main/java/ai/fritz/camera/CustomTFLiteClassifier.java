@@ -93,22 +93,35 @@ public class CustomTFLiteClassifier {
         int obj = -1;
 
         for (int i = 0; i < mnistOutput[0].length; i++) {
-
             float value = mnistOutput[0][i];
-
             if(value > highest){
                 highest = value;
                 obj = i;
             }
-            //blender bottle
-            //glasses
-            //lock
-            //monitor
-            //thermometer
             Log.d(TAG, "Output for " + Integer.toString(i) + ": " + Float.toString(value));
-
         }
-        Log.d(TAG,"obj is " + obj);
+        String hey = "";
+        switch (obj) {
+            case 0:
+                hey = "MacBook";
+                break;
+            case 1:
+                hey = "Blender Bottle";
+                break;
+            case 2:
+                hey =  "Gloves";
+                break;
+            case 3:
+                hey =  "Lock";
+                break;
+            case 4:
+                hey =  "Remote Controller";
+                break;
+            case 5:
+                hey =  "Vigileo Monitor";
+                break;
+        }
+        Log.d(TAG,"obj is " + hey);
         return obj;
     }
 
